@@ -1,5 +1,7 @@
 # snowconnect
 
+[![CI](https://github.com/mohdhafizi83/snowconnect/actions/workflows/ci.yml/badge.svg)](https://github.com/mohdhafizi83/snowconnect/actions/workflows/ci.yml)
+
 Declarative ETL connectors for Snowflake Native Apps. Define a SaaS data-sync
 connector as a JSON spec — source (HTTP API + auth + pagination), transform
 (field mapping / casts / computed columns), sink (Snowflake staging + `MERGE`
