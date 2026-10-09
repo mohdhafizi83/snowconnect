@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "snowconnect"
+version = "0.1.0"
+description = "ETL connector framework for Snowflake Native Apps — build SaaS data-sync connectors as declarative specs, test them without a Snowflake account, ship as Native App scripts."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Mohd Hafizi Mohammad Nor" }]
+dependencies = [
+    "requests>=2.31",
+    "pandas>=2.0",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "responses>=0.25"]
+
+[project.scripts]
+snowconnect = "snowconnect.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

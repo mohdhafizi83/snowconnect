@@ -1,0 +1,29 @@
+{
+  "name": "stripe_customers",
+  "schedule": "*/15 * * * *",
+  "source": {
+    "base_url": "https://api.stripe.com/v1",
+    "path": "/customers",
+    "auth": { "type": "api_key", "header": "Authorization", "key": "${STRIPE_KEY}" },
+    "params": { "limit": 100 },
+    "records_path": "data",
+    "pagination": { "type": "cursor", "cursor_param": "starting_after", "cursor_path": "data.-1.id" },
+    "watermark_field": "created",
+    "max_retries": 3
+  },
+  "transform": {
+    "fields": [
+      { "name": "ID", "from": "id", "cast": "str" },
+      { "name": "EMAIL", "from": "email", "cast": "str" },
+      { "name": "NAME", "concat": ["first_name", "last_name"], "sep": " " },
+      { "name": "CREATED_AT", "from": "created", "cast": "int" },
+      { "name": "SOURCE", "const": "stripe" }
+    ],
+    "filter": { "field": "delinquent", "not_in": [null] }
+  },
+  "sink": {
+    "table": "ANALYTICS.CUSTOMERS",
+    "keys": ["ID"],
+    "columns": ["ID", "EMAIL", "NAME", "CREATED_AT", "SOURCE"]
+  }
+}
