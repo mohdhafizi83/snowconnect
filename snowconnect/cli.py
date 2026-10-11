@@ -1,7 +1,8 @@
-"""CLI: snowconnect run <spec.json> [--dry-run] [--db sqlite_path]"""
+"""CLI: snowconnect run <spec.json> [--dry-run] [--db sqlite_path] [--verbose]"""
 from __future__ import annotations
-import argparse, json, sys
+import argparse, json, sys, traceback
 
+from .errors import ConnectorError
 from .spec import load_spec
 from .pipeline import Pipeline
 from .sink import SqliteAdapter
@@ -9,6 +10,7 @@ from .sink import SqliteAdapter
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="snowconnect")
+    ap.add_argument("--verbose", action="store_true", help="print full tracebacks on error")
     sub = ap.add_subparsers(dest="cmd", required=True)
     run = sub.add_parser("run", help="run one connector spec")
     run.add_argument("spec")
@@ -18,6 +20,18 @@ def main(argv=None):
     sub.add_parser("demo", help="run the built-in offline demo (mock API -> sqlite)")
     args = ap.parse_args(argv)
 
+    try:
+        return _dispatch(args)
+    except (ConnectorError, ValueError, OSError) as err:
+        # Expected failure classes: spec errors, SSRF policy, sink/identifier
+        # errors, source transport errors. Clean one-line message, no traceback.
+        if args.verbose:
+            traceback.print_exc()
+        print(f"snowconnect: error: {err}", file=sys.stderr)
+        return 2
+
+
+def _dispatch(args) -> int:
     if args.cmd == "demo":
         from .demo import run_demo
         return run_demo()
