@@ -3,6 +3,8 @@ from __future__ import annotations
 import base64, time
 import requests
 
+from .ssrf import validate_url
+
 
 class NoAuth:
     """No authentication."""
@@ -59,7 +61,9 @@ class OAuth2ClientCredentials:
     name = "oauth2_client_credentials"
 
     def __init__(self, token_url: str, client_id: str, client_secret: str,
-                 scopes: list[str] | None = None, refresh_margin_s: int = 60):
+                 scopes: list[str] | None = None, refresh_margin_s: int = 60,
+                 allow_private: bool = False):
+        validate_url(token_url, allow_private=allow_private)
         self.token_url = token_url
         self.client_id = client_id
         self.client_secret = client_secret
@@ -95,7 +99,7 @@ class OAuth2ClientCredentials:
         return {"type": "oauth2_client_credentials", "expires_at": self._expires_at}
 
 
-def build_auth(spec: dict | None):
+def build_auth(spec: dict | None, allow_private: bool = False):
     """Factory: {'type': 'oauth2', ...} -> auth instance."""
     if not spec or spec.get("type", "none") == "none":
         return NoAuth()
@@ -107,5 +111,6 @@ def build_auth(spec: dict | None):
     if t == "oauth2":
         return OAuth2ClientCredentials(
             token_url=spec["token_url"], client_id=spec["client_id"],
-            client_secret=spec["client_secret"], scopes=spec.get("scopes"))
+            client_secret=spec["client_secret"], scopes=spec.get("scopes"),
+            allow_private=allow_private)
     raise ValueError(f"unknown auth type: {t}")

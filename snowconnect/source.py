@@ -6,6 +6,8 @@ from typing import Iterator
 import requests
 
 from .auth import build_auth
+from .errors import ConnectorError
+from .ssrf import DEFAULT_MAX_RESPONSE_BYTES, DEFAULT_TIMEOUT_S, validate_url
 
 
 class Watermark:
@@ -31,10 +33,16 @@ class HttpSource:
 
     Supports page-number and cursor pagination, ISO-timestamp watermarking,
     nested record paths ('data.items'), and bounded retries with backoff.
+
+    Security: the spec-provided ``base_url`` is validated through the SSRF
+    guard (``snowconnect.ssrf``) at construction; redirects are refused and
+    responses are size-capped (``max_response_bytes``, default 50 MB).
     """
 
     def __init__(self, spec: dict, state_path: str | Path = ".snowconnect/state.json",
                  session: requests.Session | None = None):
+        self.allow_private = bool(spec.get("allow_private", False))
+        validate_url(spec["base_url"], allow_private=self.allow_private)
         self.base_url = spec["base_url"].rstrip("/")
         self.path = spec.get("path", "/")
         self.method = spec.get("method", "GET").upper()
@@ -43,9 +51,10 @@ class HttpSource:
         self.records_path = spec.get("records_path")  # e.g. "data.items"
         self.pagination = spec.get("pagination", {"type": "none"})
         self.watermark_field = spec.get("watermark_field")  # field in record
-        self.auth = build_auth(spec.get("auth"))
+        self.auth = build_auth(spec.get("auth"), allow_private=self.allow_private)
         self.max_retries = spec.get("max_retries", 3)
-        self.timeout = spec.get("timeout", 30)
+        self.timeout = spec.get("timeout", DEFAULT_TIMEOUT_S)
+        self.max_response_bytes = int(spec.get("max_response_bytes", DEFAULT_MAX_RESPONSE_BYTES))
         self.state = Watermark(state_path)
         self.session = session or requests.Session()
         self.auth.apply(self.session)
@@ -103,16 +112,48 @@ class HttpSource:
             try:
                 resp = self.session.request(
                     self.method, self.base_url + self.path,
-                    params={**params, **self.params, **extra}, timeout=self.timeout)
+                    params={**params, **self.params, **extra}, timeout=self.timeout,
+                    allow_redirects=False)
+                if resp.is_redirect or 300 <= resp.status_code < 400:
+                    raise ConnectorError(
+                        f"redirect refused from {self.base_url + self.path} "
+                        f"(status {resp.status_code}); the redirect target is not "
+                        "validated, so redirects are not followed")
                 if resp.status_code == 429 or resp.status_code >= 500:
                     raise requests.HTTPError(f"retryable {resp.status_code}", response=resp)
                 resp.raise_for_status()
+                self._check_size(resp)
                 return resp
             except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as err:
                 last_err = err
                 if attempt < self.max_retries:
                     time.sleep(min(2 ** attempt, 15))
-        raise RuntimeError(f"source request failed after retries: {last_err}")
+        raise ConnectorError(f"source request failed after retries: {last_err}")
+
+    def _check_size(self, resp: requests.Response) -> None:
+        """Enforce max_response_bytes via Content-Length and streamed reads."""
+        declared = resp.headers.get("Content-Length")
+        if declared and declared.isdigit() and int(declared) > self.max_response_bytes:
+            resp.close()
+            raise ConnectorError(
+                f"response too large: {declared} bytes exceeds cap of "
+                f"{self.max_response_bytes} (spec field 'max_response_bytes')")
+        if resp._content_consumed:
+            if len(resp.content) > self.max_response_bytes:
+                raise ConnectorError(
+                    f"response too large: {len(resp.content)} bytes exceeds cap of "
+                    f"{self.max_response_bytes} (spec field 'max_response_bytes')")
+            return
+        # not preloaded: read in chunks and abort as soon as the cap is passed
+        buf = bytearray()
+        for chunk in resp.iter_content(chunk_size=65536):
+            buf.extend(chunk)
+            if len(buf) > self.max_response_bytes:
+                resp.close()
+                raise ConnectorError(
+                    f"response exceeds cap of {self.max_response_bytes} bytes "
+                    "(spec field 'max_response_bytes')")
+        resp._content = bytes(buf)
 
     # ---- public API ---------------------------------------------------------
     def stream(self, stream: str = "main") -> Iterator[dict]:

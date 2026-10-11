@@ -41,8 +41,9 @@ DEMO_SPEC = {
     "name": "demo_customers",
     "source": {
         "base_url": "http://127.0.0.1:{port}",
+        "allow_private": True,
         "path": "/v1/customers",
-        "auth": {"type": "bearer", "token": "demo"},
+        "auth": {"type": "bearer", "token": "demo"},  # nosec B105 — fake token for the local mock API, not a credential
         "params": {"limit": 10},
         "records_path": "data",
         "pagination": {"type": "cursor", "cursor_param": "starting_after", "cursor_path": "data.-1.id"},
