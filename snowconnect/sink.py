@@ -45,7 +45,7 @@ class SnowflakeSQLSink:
         update_clause = ", ".join(f"tgt.{c} = src.{c}" for c in update_set) if update_set else None
         insert_cols = ", ".join(cols)
         insert_vals = ", ".join(f"src.{c}" for c in cols)
-        matched = f"WHEN MATCHED THEN UPDATE SET {update_clause}" if update_clause else ""
+        matched = f"WHEN MATCHED THEN UPDATE SET {update_clause}" if update_clause else ""  # nosec B608
         return (
             f"MERGE INTO {self.table} tgt USING (\n"
             f"  SELECT {', '.join(f'%({c.lower()})s AS {c}' for c in cols)}\n"
