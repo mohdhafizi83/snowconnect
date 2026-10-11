@@ -68,11 +68,35 @@ For real Snowflake, pass any DB-API connection (e.g.
 `snowflake.connector.connect(...)`) to `Pipeline(spec, sink_connection=conn)`.
 `snowflake-connector-python` is intentionally NOT a hard dependency.
 
+## Security
+
+Source URLs come from spec files, so they pass an SSRF guard
+(`snowconnect/ssrf.py`): http/https only, no `user:pass@` userinfo, the host
+is resolved and **every** address must be public (private, loopback,
+link-local incl. `169.254.169.254`, multicast, reserved are rejected);
+redirects are refused; responses are capped (default 50 MB) and requests
+time out (default 30 s, both spec-configurable).
+
+```bash
+# loopback is blocked by default — clean one-line error, no traceback:
+echo '{"name":"x","source":{"base_url":"http://127.0.0.1:9"}}' > /tmp/bad.json
+snowconnect run /tmp/bad.json
+# snowconnect: error: host '127.0.0.1' resolves to blocked address 127.0.0.1 ...
+
+snowconnect --verbose run /tmp/bad.json   # full traceback when you want it
+```
+
+`"allow_private": true` in a source spec disables the address checks for
+local testing (the demo's localhost mock API uses it) — never for production
+specs. Sink identifiers are allowlist-validated (no SQL injection via spec).
+Threat model, `allow_private` semantics, and known limitations (DNS
+rebinding TOCTOU): [SECURITY.md](SECURITY.md).
+
 ## Design notes
 
 - **Testable without cloud**: the whole pipeline runs against sqlite via
   `SqliteAdapter` (MERGE → `INSERT OR REPLACE` dialect switch). CI needs no
-  Snowflake account. See `tests/` — 10 tests, mocked HTTP via `responses`.
+  Snowflake account. See `tests/` — 39 tests, mocked HTTP via `responses`.
 - **Incremental loads**: watermark state in `.snowconnect/state.json`; a
   connector that fails mid-run resumes from the last committed watermark.
 - **Native App path**: the generated `MERGE` SQL and spec format map 1:1 to
@@ -82,7 +106,8 @@ For real Snowflake, pass any DB-API connection (e.g.
 
 ## Status
 
-v0.1 — core framework, offline demo, 10 passing tests. Roadmap: YAML specs
+v0.1 — core framework, offline demo, SSRF-guarded HTTP source, 39 passing
+tests. Roadmap: YAML specs
 in core, dbt snapshot mode, Native App packaging script, more built-in
 connectors (HubSpot, Xero).
 
