@@ -12,6 +12,15 @@ Xero…) need the same connector skeleton — authenticate, paginate, map fields
 upsert into Snowflake. This framework makes that skeleton reusable, testable
 offline, and deployable as a Snowflake Native App component.
 
+## Architecture
+
+![pipeline architecture](docs/architecture.svg)
+
+One JSON spec drives the whole run: the source fetches pages (auth +
+pagination handled), the transform maps/casts/filters rows, the sink stages
+and `MERGE`-upserts, and a per-stream watermark makes every next run
+incremental.
+
 ## Quickstart (no credentials needed)
 
 ```bash

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 300" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="860" height="300" fill="#f8fafc"/>
+  <text x="430" y="34" text-anchor="middle" font-size="19" font-weight="700" fill="#0f172a">snowconnect pipeline</text>
+
+  <rect x="30" y="70" width="170" height="86" rx="10" fill="#e0e7ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="115" y="98" text-anchor="middle" font-size="15" font-weight="700" fill="#312e81">connector spec</text>
+  <text x="115" y="120" text-anchor="middle" font-size="12.5" fill="#312e81">JSON: source · transform</text>
+  <text x="115" y="138" text-anchor="middle" font-size="12.5" fill="#312e81">· sink · watermark</text>
+
+  <rect x="250" y="70" width="170" height="86" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="335" y="98" text-anchor="middle" font-size="15" font-weight="700" fill="#1e3a8a">Source</text>
+  <text x="335" y="120" text-anchor="middle" font-size="12.5" fill="#1e3a8a">HTTP + OAuth2/API-key</text>
+  <text x="335" y="138" text-anchor="middle" font-size="12.5" fill="#1e3a8a">cursor/page pagination</text>
+
+  <rect x="470" y="70" width="170" height="86" rx="10" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="555" y="98" text-anchor="middle" font-size="15" font-weight="700" fill="#78350f">Transform</text>
+  <text x="555" y="120" text-anchor="middle" font-size="12.5" fill="#78350f">field mapping · casts</text>
+  <text x="555" y="138" text-anchor="middle" font-size="12.5" fill="#78350f">computed columns · filter</text>
+
+  <rect x="690" y="70" width="140" height="86" rx="10" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="760" y="98" text-anchor="middle" font-size="15" font-weight="700" fill="#14532d">Sink</text>
+  <text x="760" y="120" text-anchor="middle" font-size="12.5" fill="#14532d">staging table</text>
+  <text x="760" y="138" text-anchor="middle" font-size="12.5" fill="#14532d">MERGE upsert</text>
+
+  <line x1="200" y1="113" x2="248" y2="113" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="420" y1="113" x2="468" y2="113" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="640" y1="113" x2="688" y2="113" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <rect x="250" y="205" width="580" height="60" rx="10" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="540" y="230" text-anchor="middle" font-size="14" font-weight="700" fill="#334155">Incremental watermark store</text>
+  <text x="540" y="250" text-anchor="middle" font-size="12.5" fill="#334155">last seen value persisted per stream — next run fetches only new/changed rows</text>
+  <path d="M 760 156 L 760 201" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+  <path d="M 335 235 L 335 160" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+
+  <text x="115" y="200" text-anchor="middle" font-size="12.5" fill="#64748b">runs offline:</text>
+  <text x="115" y="218" text-anchor="middle" font-size="12.5" fill="#64748b">demo = mock API → sqlite</text>
+  <text x="115" y="236" text-anchor="middle" font-size="12.5" fill="#64748b">stand-in, prints real MERGE</text>
+</svg>
