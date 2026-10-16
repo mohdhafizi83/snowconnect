@@ -1,0 +1,16 @@
+# One-shot offline demo: `docker compose up` builds the image, runs
+# `snowconnect demo` (mock API -> pipeline -> sqlite -> MERGE SQL), and exits 0.
+# No .env needed — the demo requires no credentials or network access.
+services:
+  demo:
+    build: .
+    image: snowconnect-demo
+    restart: "no"
+    # One-shot job: the container exits when the demo finishes. The healthcheck
+    # verifies the installed package is importable while the run is in flight.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import snowconnect; print(snowconnect.__version__)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

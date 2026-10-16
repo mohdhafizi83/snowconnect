@@ -24,6 +24,13 @@ incremental.
 ## Quickstart (no credentials needed)
 
 ```bash
+git clone https://github.com/mohdhafizi83/snowconnect.git && cd snowconnect
+docker compose up --build   # one-shot offline demo, exits 0 on success
+```
+
+Or without Docker:
+
+```bash
 pip install -e .
 snowconnect demo
 ```
@@ -112,6 +119,12 @@ rebinding TOCTOU): [SECURITY.md](SECURITY.md).
   Snowflake Native App shared data / event-table patterns; a connector is one
   Python module + one spec file.
 - **Safety**: table/column identifiers are validated (no injection via spec).
+
+## Documentation
+
+- [Getting started](docs/getting-started.md) — Docker demo, local install, real Snowflake setup
+- [Configuration](docs/configuration.md) — every connector-spec field
+- [Security policy](SECURITY.md) · [Changelog](CHANGELOG.md)
 
 ## Status
 
